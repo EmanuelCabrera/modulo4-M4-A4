@@ -6,9 +6,17 @@ import com.mindhub.a4.handler.Level1SupportHandler;
 import com.mindhub.a4.handler.Level2SupportHandler;
 import com.mindhub.a4.handler.ManagerSupportHandler;
 import com.mindhub.a4.handler.UnresolverSupportHandler;
+import com.mindhub.a4.clasess.TicketSubject;
+import com.mindhub.a4.clasess.EmailObserver;
+import com.mindhub.a4.clasess.SlackObserver;
+import com.mindhub.a4.clasess.BillingObserver;
+
+
 
 public class HelpDeskService {
     private SupportHandler supportChain;
+    private TicketSubject ticketSubject;
+
 
     public HelpDeskService() {
         // Construir la cadena de responsabilidad
@@ -22,7 +30,15 @@ public class HelpDeskService {
         .setNextHandler(unresolver);
 
         supportChain = level1;
-    }
+
+        // Crear instancias de los observadores para poder referenciarlos
+
+        // Registrar los observadores
+        ticketSubject = new TicketSubject();
+        ticketSubject.addObserver(new EmailObserver());
+        ticketSubject.addObserver(new SlackObserver());
+        ticketSubject.addObserver(new BillingObserver());
+    }   
 
     public void processTicket(Ticket ticket) {
         // Solucion problema 1: utilizando el patron de diseno Strategy
@@ -35,6 +51,16 @@ public class HelpDeskService {
         boolean solved = supportChain.handleRequest(ticket);
         if (!solved) {
             System.out.println("Ticket #" + ticket.getId() + " no pudo ser resuelto. Perdido en el limbo.");
+        }
+
+
+        // Solucion problema 3: utilizando el patron de diseno Observer
+        if (solved) {
+            System.out.println("-- Notificando --");
+            ticketSubject.notifyObservers(ticket);
+            System.out.println("Ticket #" + ticket.getId() + " ha sido resuelto. Notificación enviada a todos los observadores.");
+        }else{
+            System.out.println("Ticket #" + ticket.getId() + " no pudo ser resuelto. No se notificará.");
         }
     }
 }
